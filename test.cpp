@@ -1,41 +1,36 @@
-
-//#include<bits/stdc++.h>
 #include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+
+//#include <cstdio>
+
 using namespace std;
-typedef long long int $;
-class node
+typedef long long int $ ;
+struct node
 {
     public:
-    $  val;
-    $  siz;
-    $  pri;
-    $  sum;
-    $  lazy;
-    $  mn;
-    bool rev;
+    $    val;
+    $    siz;
+    $    pri;
+    $    max_sum;
+    $    total_sum;
+    $    pref_sum;
+    $    suff_sum;
     node *left;
     node *right;
-    node($  key)
+    node($    key)
     {
         val=key;
         siz=1;
-        lazy=0;
-        sum=key;
         pri=rand();
-      //  srand(time(NULL));
-        mn=key;
-        rev=false;
+        max_sum=key;
+        total_sum=key;
+        pref_sum=key;
+        suff_sum=key;
         left=NULL;
         right=NULL;
     }
 };
 typedef node* pnode;
-$  size(pnode tree)
+$    size(pnode tree)
 {
     return (tree?tree->siz:0);
 }
@@ -46,64 +41,52 @@ void update(pnode &tree)
        tree->siz=size(tree->left)+size(tree->right)+1;
    }
 }
-$  minimum($  a,$  b)
+$    maxi($    a,$    b)
 {
-    return a>b?b:a;
+    return a<b?b:a;
 }
-void swap(pnode &a,pnode &b)
+$  maximum($  a,$  b,$  c)
 {
-    pnode c=a;
-    a=b;
-    b=c;
+    return(maxi(maxi(a,b),c));
 }
-void push(pnode &tree)
-{
-    if(tree&&tree->rev)
-    {
-        tree->rev=false;
-        swap(tree->left,tree->right);
-        if(tree->left)tree->left->rev ^= true;
-        if(tree->right)tree->right->rev ^= true;
-    }
-}
-void lazy(pnode &tree)
-{
-    if(!tree||!tree->lazy)return;
-    tree->val+=tree->lazy;
-    tree->sum+=(tree->lazy)*(size(tree));
-    tree->mn+=(tree->lazy)*(size(tree));
-    if(tree->left)tree->left->lazy+=tree->lazy;
-    if(tree->right)tree->right->lazy+=tree->lazy;
-    tree->lazy=0;
-}
+
 void reset(pnode &tree)
 {
     if(tree)
     {
-        tree->sum=tree->val;
-        tree->mn=tree->val;
+        tree->max_sum=tree->val;
+        tree->total_sum=tree->val;
+        tree->pref_sum=tree->val;
+        tree->suff_sum=tree->val;
     }
 }
 void combine(pnode &tree,pnode l,pnode r)
 {
-    if(!l||!r)
+if(!l||!r)
     {
         tree=l?l:r;return;
     }
-    tree->sum=l->sum+r->sum;
-    tree->mn=minimum(l->mn,r->mn);
+    tree->max_sum=maximum(l->max_sum,r->max_sum,(l->suff_sum+r->pref_sum));
+
+    tree->total_sum=(l->total_sum+r->total_sum);
+
+    tree->pref_sum=maximum(l->pref_sum,l->total_sum,l->total_sum+r->pref_sum);
+
+    tree->suff_sum=maximum(r->suff_sum,r->total_sum,r->total_sum+l->suff_sum);
+
 }
 void operation(pnode &tree)
 {
     if(!tree)return;
     reset(tree);
-    push(tree->left);push(tree->right);lazy(tree->left);lazy(tree->right);
-    combine(tree,tree->left,tree);
+
+     combine(tree,tree->left,tree);
     combine(tree,tree,tree->right);
+
 }
-void split(pnode tree,pnode &l,pnode &r,$  key,$  lcount)
+void split(pnode tree,pnode &l,pnode &r,$    key,$    lcount)
 {
-     push(tree); lazy(tree);
+
     if(!tree)
     {
         l=NULL;
@@ -115,24 +98,19 @@ void split(pnode tree,pnode &l,pnode &r,$  key,$  lcount)
         l=tree;
         r=tree->right;
         tree->right=NULL;
-
     }
     else if(lcount+1+size(tree->left)<key)
     {
         split(tree->right,tree->right,r,key,lcount+1+size(tree->left));
         l=tree;
-         update(l);
-        operation(l);
     }
     else
     {
        split(tree->left,l,tree->left,key,lcount);
         r=tree;
-         update(r);
-        operation(r);
     }
-
-
+    update(tree);
+    operation(tree);
 }
 
 void merge(pnode &tree,pnode l,pnode r)
@@ -144,170 +122,37 @@ void merge(pnode &tree,pnode l,pnode r)
     }
     else if(l->pri>r->pri)
     {
-        push(l);lazy(l);
         merge(l->right,l->right,r);
         tree=l;
-         update(l);
-         operation(l);
     }
     else
     {
-        push(r);lazy(r);
         merge(r->left,l,r->left);
         tree=r;
-        update(r);
-         operation(r);
     }
-
-
+    update(tree);
+    operation(tree);
 }
 
 
 pnode root=NULL;
-void insert($  key)
-{
-    merge(root,root,new node(key));
-}
-void joinfirst($  l,$  r)
-{
-   pnode temp1=NULL;
-   pnode temp2=NULL;
-   pnode temp3=NULL;
-   pnode temp4=NULL;
-   split(root,temp1,temp2,r,0);
-   split(temp1,temp3,temp4,l-1,0);
-   merge(root,temp4,temp3);
-   merge(root,root,temp2);
-}
-void joinsecond($  l,$  r)
-{
-   pnode temp1=NULL;
-   pnode temp2=NULL;
-   pnode temp3=NULL;
-   pnode temp4=NULL;
-   split(root,temp1,temp2,r,0);
-   split(temp1,temp3,temp4,l-1,0);
-   merge(root,temp3,temp2);
-   merge(root,root,temp4);
-}
 
-void inorder(pnode tree)
+void insert($  x)
 {
-    if(tree)
-    {
-         push(tree);
-        lazy(tree);
-
-        inorder(tree->left);
-        cout<<tree->val<<" ";
-        inorder(tree->right);
-    }
-
+    merge(root,root,new node(x));
 }
-$  mini(pnode tree)
-{
-    if(tree->left)
-    {
-        return mini(tree->left);
-    }
-    return tree->val;
-}
-$  maxi(pnode tree)
-{
-    if(tree->right)
-    {
-        return maxi(tree->right);
-    }
-    return tree->val;
-}
-$  GETSUM($  l,$  r)
-{
-   pnode temp1=NULL;
-   pnode temp2=NULL;
-   pnode temp3=NULL;
-   pnode temp4=NULL;
-   split(root,temp1,temp2,r,0);
-   split(temp1,temp3,temp4,l-1,0);
-   $  sum=temp4->sum;
-   merge(root,temp3,temp4);
-   merge(root,root,temp2);
-   return sum;
-}
-$  GETMIN($  l,$  r)
-{
-   pnode temp1=NULL;
-   pnode temp2=NULL;
-   pnode temp3=NULL;
-   pnode temp4=NULL;
-   split(root,temp1,temp2,r,0);
-   split(temp1,temp3,temp4,l-1,0);
-   $  mi=temp4->mn;
-   merge(root,temp3,temp4);
-   merge(root,root,temp2);
-   return mi;
-}
-void UPDATE_RANGE($  l,$  r,$  diff)
-{
-   pnode temp1=NULL;
-   pnode temp2=NULL;
-   pnode temp3=NULL;
-   pnode temp4=NULL;
-   split(root,temp1,temp2,r,0);
-   split(temp1,temp3,temp4,l-1,0);
-   temp4->lazy+=diff;
-   merge(root,temp3,temp4);
-   merge(root,root,temp2);
-}
-void REVERSE_TREE(pnode &tree)
-{
-    tree->rev ^= true;
-}
-void REVERSE_RANGE($  l,$  r)
+$  MAX_SUM($  x,$  y)
 {
     pnode temp1=NULL;
     pnode temp2=NULL;
     pnode temp3=NULL;
     pnode temp4=NULL;
-    split(root,temp1,temp2,r,0);
-    split(temp1,temp3,temp4,l-1,0);
-    temp4->rev ^= true;
+    split(root,temp1,temp2,y,0);
+    split(temp1,temp3,temp4,x-1,0);
+    $  ma=temp4->max_sum;
     merge(root,temp3,temp4);
     merge(root,root,temp2);
-}
-void REVOLVE($  l,$  r,$  k)
-{
-    $  len=r-l+1;
-    k=k%len;
-    pnode temp1=NULL;
-    pnode temp2=NULL;
-    pnode temp3=NULL;
-    pnode temp4=NULL;
-    pnode temp5=NULL;
-    pnode temp6=NULL;
-    split(root,temp1,temp2,r,0);
-    split(temp1,temp3,temp4,l-1,0);
-    split(temp4,temp5,temp6,len-k,0);
-    merge(root,temp6,temp5);
-    merge(root,temp3,root);
-    merge(root,root,temp2);
-}
-void INSERT($  i,$  P)
-{
-    pnode temp1=NULL;
-    pnode temp2=NULL;
-    split(root,temp1,temp2,i-1,0);
-    merge(root,temp1,new node(P));
-    merge(root,root,temp2);
-}
-void DELETE($  i)
-{
-    pnode temp1=NULL;
-    pnode temp2=NULL;
-    pnode temp3=NULL;
-    pnode temp4=NULL;
-    split(root,temp1,temp2,i-1,0);
-    split(temp2,temp3,temp4,1,0);
-    merge(root,temp1,temp4);
+    return ma;
 }
 void UPDATE(int x,int y)
 {
@@ -321,68 +166,41 @@ void UPDATE(int x,int y)
     merge(root,temp1,temp3);
     merge(root,root,temp4);
 }
-
-$  abs($  a){return a>0?a:-a;}
+void inorder(pnode tree)
+{
+    if(tree)
+    {
+        inorder(tree->left);
+        cout<<tree->max_sum<<" "<<tree->total_sum<<" "<<tree->pref_sum<<" "<<tree->suff_sum<<endl;
+        inorder(tree->right);
+    }
+}
 int main()
 {
-    $  n,m;cin>>n;
-    $  ini,i;root=NULL;
-    for(i=0;i<n;++i)
-    {
-        cin>>ini;
-        insert(ini);
-    }
-   inorder(root);cout<<endl;
-    cin>>m;
-    string s;
-    $  x,y,D,k,P;
-    while(m--)
-    {
-       cin>>s;
-       if(s[0]=='A')
-       {
-          cin>>x>>y>>D;
-          UPDATE_RANGE(x,y,D);
-        //  inorder(root);cout<<endl;
-       }
-       else if(s[0]=='R'&&s[3]=='E')
-       {
-          cin>>x>>y;
-          REVERSE_RANGE(x,y);
-         // inorder(root);cout<<endl;
-       }
-       else if(s[0]=='R'&&s[3]=='O')
-       {
-         cin>>x>>y>>k;
-         REVOLVE(x,y,k);
-        // inorder(root);cout<<endl;
-       }
-       else if(s[0]=='I')
-       {
-         cin>>x>>P;
-         INSERT(x+1,P);
-        // inorder(root);cout<<endl;
-       }
-       else if(s[0]=='D')
-       {
-         cin>>x;
-         DELETE(x);
-         //inorder(root);cout<<endl;
-       }
-       else if(s[0]=='M')
-       {
-         cin>>x>>y;
-         cout<<GETMIN(x,y)<<endl;
-         //inorder(root);cout<<endl;
-       }
-       //else if(s[0]=='S')
-       //{
-        // cin>>x>>y;
-        // cout<<GETSUM(x,y)<<endl;
-        //inorder(root);cout<<endl;
-       //}
-    }
+   $   n;
+   cin>>n;
+  // scanf("%d",&n);
+   $  ii;
+   for($  i=1;i<=n;++i)
+   {
+       cin>>ii;
+      // scanf("%d",&ii);
+       insert(ii);
+   }cout<<MAX_SUM(1,3)<<endl;
+   $  m;cin>>m;
+   while(m--)
+   {
+    $  x,y,type;
+    cin>>type;
+     cin>>x>>y;
+     // scanf("%d%d",&x,&y);
+     if(type==1)
+      cout<<MAX_SUM(x,y)<<endl;
+       //printf("%d\n",MAX_SUM(x,y));
+       else
+        UPDATE(x,y);
 
-
-    return 0;
+   }
+   inorder(root);
+   return 0;
 }
